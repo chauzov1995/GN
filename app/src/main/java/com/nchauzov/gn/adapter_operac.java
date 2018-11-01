@@ -13,7 +13,7 @@ import android.widget.TextView;
 import java.util.ArrayList;
 
 public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHolder> {
-    private ArrayList<class_detal> mDataset;
+    private ArrayList<class_operac> mDataset;
    Activity ctx;
 
     // Provide a reference to the views for each data item
@@ -35,7 +35,7 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public adapter_operac(ArrayList<class_detal> myDataset, Activity _ctx) {
+    public adapter_operac(ArrayList<class_operac> myDataset, Activity _ctx) {
         mDataset = myDataset;
         ctx=_ctx;
     }
@@ -55,7 +55,7 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
 
-        final class_detal p = mDataset.get(position);
+        final class_operac p = mDataset.get(position);
         holder.tv1.setText(p.NAME);
 
         holder.elementves.setOnClickListener(new View.OnClickListener() {

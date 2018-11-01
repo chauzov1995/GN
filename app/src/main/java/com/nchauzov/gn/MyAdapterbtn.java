@@ -14,7 +14,8 @@ import java.util.ArrayList;
 
 public class MyAdapterbtn extends RecyclerView.Adapter<MyAdapterbtn.ViewHolder> {
     private ArrayList<class_mtara> mDataset;
-    Activity ctx;
+    detal_obzor ctx;
+    class_detal detal;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -22,7 +23,6 @@ public class MyAdapterbtn extends RecyclerView.Adapter<MyAdapterbtn.ViewHolder> 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         // each data item is just a string in this case
         public Button button5;
-        LinearLayout elementves;
 
         public ViewHolder(View v) {
             super(v);
@@ -30,15 +30,14 @@ public class MyAdapterbtn extends RecyclerView.Adapter<MyAdapterbtn.ViewHolder> 
             //  mTextView = v;
             button5 = (Button) v.findViewById(R.id.button5);
 
-            elementves = (LinearLayout) v.findViewById(R.id.elementves);
-
         }
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapterbtn(ArrayList<class_mtara> myDataset, Activity _ctx) {
+    public MyAdapterbtn(ArrayList<class_mtara> myDataset, detal_obzor _ctx, class_detal detal) {
         mDataset = myDataset;
         ctx = _ctx;
+        this.detal = detal;
     }
 
     // Create new views (invoked by the layout manager)
@@ -58,7 +57,11 @@ public class MyAdapterbtn extends RecyclerView.Adapter<MyAdapterbtn.ViewHolder> 
 
         final class_mtara p = mDataset.get(position);
         holder.button5.setText(p.NAME);
-
+        holder.button5.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View r) {
+                new detal_obzor.Task_poloj_v_elku(ctx, p.ID, detal).execute();
+            }
+        });
 
     }
 

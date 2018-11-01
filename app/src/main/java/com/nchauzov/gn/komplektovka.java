@@ -11,6 +11,8 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.SearchView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -25,14 +27,17 @@ import java.net.URL;
 import java.util.ArrayList;
 
 import static com.nchauzov.gn.texclass.formir_params_sql;
+import static com.nchauzov.gn.texclass.query_zapros;
 
 public class komplektovka extends AppCompatActivity {
 
     LinearLayout skan_elka;
     private android.app.FragmentTransaction fragmentTransaction;
-
+    SearchView simpleSearchView;
     Double find_bd_id;
-    ArrayList<class_mtara> mtara_l = new ArrayList<class_mtara>();
+    class_mtara mtara_l;
+    ArrayList<class_detal> detal_list;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,7 @@ public class komplektovka extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
+        simpleSearchView = (SearchView) findViewById(R.id.simpleSearchView); // inititate a search view
 
         skan_elka = (LinearLayout) findViewById(R.id.skan_elka);
         skan_elka.setOnClickListener(new View.OnClickListener() {
@@ -56,9 +62,32 @@ public class komplektovka extends AppCompatActivity {
             }
         });
 
+
+        // поиск
+        simpleSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+// do something on text submit
+
+
+                parse_strich(Double.parseDouble(query));
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+// do something when text changes
+                return false;
+            }
+        });
+
+
+        String query = simpleSearchView.getQuery().toString(); // get the query string currently in the text field
+
+
         ///временннооооо!!!!!!
-             find_bd_id = 203.0;
-            new Task_get_elka().execute("http://www.web.gn/work/public/otdelka/query");
+      //  find_bd_id = 203.0;
+       // new Task_get_elka().execute();
 
 
     }
@@ -67,23 +96,33 @@ public class komplektovka extends AppCompatActivity {
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
         Double contents = Double.parseDouble(intent.getStringExtra("SCAN_RESULT")); // This will contain your scan result
+        if (requestCode == 0) {
+            if (resultCode == RESULT_OK) {
+                parse_strich(contents);
+            }
+        }
+    }
 
-        if (requestCode == 0) {
-            if (resultCode == RESULT_OK) {
-                if ((contents > 1500000000) && (contents < 1600000000)) { // код тары
-                    find_bd_id = contents - 1500000000;
-                    new Task_get_elka().execute("http://www.web.gn/work/public/otdelka/query");
-                }
-            }
+    void parse_strich(Double contents) {
+
+
+
+
+
+        if ((contents > 1500000000) && (contents < 1600000000)) { // код тары
+            fragmentTransaction = getFragmentManager().beginTransaction();
+            fragmentTransaction.replace(R.id.frgmCont, new load_pb());
+            fragmentTransaction.commit();
+            find_bd_id = contents - 1500000000;
+            new Task_get_elka().execute();
+        } else if (contents > 5000000000.0) { // код тары
+            find_bd_id = contents - 5000000000.0;
+            new Task_get_detal().execute();
+        } else {
+            Toast.makeText(komplektovka.this, "Неизвестный код", Toast.LENGTH_LONG).show();
         }
-        if (requestCode == 0) {
-            if (resultCode == RESULT_OK) {
-                if (contents > 5000000000.0) { // код тары
-                    find_bd_id = contents - 5000000000.0;
-                    new Task_get_detal().execute("http://www.web.gn/work/public/otdelka/query");
-                }
-            }
-        }
+
+
     }
 
     private class Task_get_elka extends AsyncTask<String, Void, String> {
@@ -92,77 +131,71 @@ public class komplektovka extends AppCompatActivity {
 
             String content;
             try {
-                content = getContent(path[0]);
+                //Здесь пиши тяжеловестный код
+                String otvet = query_zapros(new String[]{
+                        "select FIRST 1 a.*, b.STATUS_ID from MTARA a LEFT JOIN MTARALOG b ON b.MTARA_ID=a.ID " +
+                                "where a.ID=" + find_bd_id + " ORDER BY b.ID DESC"
+                });
+
+
+                JSONObject zakaz = new JSONArray(otvet).getJSONObject(0);
+                mtara_l = new class_mtara(
+                        zakaz.getInt("ID"),
+                        zakaz.getString("NAME"),
+                        zakaz.getInt("MTARATYPE_ID"),
+                        zakaz.optInt("STATUS_ID", 1)
+                );
+
+
+                String otvet2 = query_zapros(new String[]{
+                        "select * from WOTDELKA where MTARA_ID=" + mtara_l.ID
+                });
+
+
+                JSONArray friends = new JSONArray(otvet2);
+                detal_list = new ArrayList<class_detal>();
+                for (int i = 0; i < friends.length(); i++) {
+
+
+                    JSONObject zakaz2 = friends.getJSONObject(i);
+                    Log.d("asdadasd", zakaz2.getString("NAME"));
+                    detal_list.add(new class_detal(
+                            zakaz2.getInt("ID"),
+                            zakaz2.getString("NAME"),
+                            zakaz2.getInt("CUSTOMID"),
+                            zakaz2.getString("V"),
+                            zakaz2.getString("S"),
+                            zakaz2.getString("G"),
+                            zakaz2.optInt("MTARA_ID", 0),
+                            zakaz2.getString("PREF"),
+                            zakaz2.getString("SV"),
+                            zakaz2.optInt("MOTDELKA_ID_POKR", 0),
+                            zakaz2.optInt("MOTDELKA_ID_ZVET", 0)
+                    ));
+                }
+
+
+                content = "";
+
             } catch (IOException ex) {
                 content = ex.getMessage();
+            } catch (JSONException e) {
+                content = e.getMessage();
             }
-
             return content;
         }
-
 
         @Override
         protected void onPostExecute(String content) {
 
-            mtara_l = new ArrayList<class_mtara>();
-            JSONArray friends = null;
-            Log.d("psad", content);
-            try {
-                friends = new JSONArray(content);
-                for (int i = 0; i < friends.length(); i++) {
-                    JSONObject zakaz = friends.getJSONObject(i);
-                    mtara_l.add(new class_mtara(
-                            zakaz.getInt("ID"),
-                            zakaz.getString("NAME"),
-                            zakaz.getInt("MTARATYPE_ID"),
-                            zakaz.optInt("STATUS_ID", 1)
-                    ));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
 
+            fragmentTransaction = getFragmentManager().beginTransaction();
+            fragmentTransaction.replace(R.id.frgmCont, new Fragment1(mtara_l, detal_list));
+            fragmentTransaction.commit();
 
-            new ProgressTask().execute("http://www.web.gn/work/public/otdelka/query");
         }
 
-        private String getContent(String path) throws IOException {
-            BufferedReader reader = null;
-            try {
-                String login = "admin";
-                String password = "4";
-                String[] sql = {
-                        "select FIRST 1 a.*, b.STATUS_ID from MTARA a LEFT JOIN MTARALOG b ON b.MTARA_ID=a.ID " +
-                                "where a.ID=" + find_bd_id + " ORDER BY b.ID DESC"
-                };
-                String params = formir_params_sql(login, password, sql);
-                Log.d("sql", params);
-                byte[] data = null;
-                URL url = new URL(path);
-                HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                c.setRequestMethod("POST");
-                c.setReadTimeout(10000);
 
-                c.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
-                OutputStream os = c.getOutputStream();
-                data = params.getBytes("UTF-8");
-                os.write(data);
-
-
-                c.connect();
-                reader = new BufferedReader(new InputStreamReader(c.getInputStream()));
-                StringBuilder buf = new StringBuilder();
-                String line = null;
-                while ((line = reader.readLine()) != null) {
-                    buf.append(line + "\n");
-                }
-                return (buf.toString());
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
-            }
-        }
     }
 
     private class Task_get_detal extends AsyncTask<String, Void, String> {
@@ -171,7 +204,10 @@ public class komplektovka extends AppCompatActivity {
 
             String content;
             try {
-                content = getContent(path[0]);
+                //Здесь пиши тяжеловестный код
+                content = query_zapros(new String[]{
+                        "select * from WOTDELKA where ID=" + find_bd_id
+                });
             } catch (IOException ex) {
                 content = ex.getMessage();
             }
@@ -186,7 +222,7 @@ public class komplektovka extends AppCompatActivity {
 
             JSONArray friends = null;
             ArrayList<class_detal> det_list = new ArrayList<class_detal>();
-Log.d("cont", content);
+            Log.d("cont", content);
             try {
                 friends = new JSONArray(content);
                 for (int i = 0; i < friends.length(); i++) {
@@ -208,147 +244,13 @@ Log.d("cont", content);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            Log.d("uje_estb", "" +  mtara_l.size());
+
             Intent intent = new Intent(komplektovka.this, detal_obzor.class);
             intent.putExtra("detal", det_list.get(0));
 
-
             komplektovka.this.startActivity(intent);
-
         }
 
-        private String getContent(String path) throws IOException {
-            BufferedReader reader = null;
-            try {
-                String login = "admin";
-                String password = "4";
-                String[] sql = {
-                        "select * from WOTDELKA where ID=" + find_bd_id
-                };
-                String params = formir_params_sql(login, password, sql);
-Log.d("params",params);
-
-                byte[] data = null;
-                URL url = new URL(path);
-                HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                c.setRequestMethod("POST");
-                c.setReadTimeout(10000);
-
-                c.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
-                OutputStream os = c.getOutputStream();
-                data = params.getBytes("UTF-8");
-                os.write(data);
-
-
-                c.connect();
-                reader = new BufferedReader(new InputStreamReader(c.getInputStream()));
-                StringBuilder buf = new StringBuilder();
-                String line = null;
-                while ((line = reader.readLine()) != null) {
-                    buf.append(line + "\n");
-                }
-                return (buf.toString());
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
-            }
-        }
-    }
-
-    private class ProgressTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... path) {
-
-            String content;
-            try {
-                content = getContent(path[0]);
-            } catch (IOException ex) {
-                content = ex.getMessage();
-            }
-
-            return content;
-        }
-
-
-        @Override
-        protected void onPostExecute(String content) {
-
-
-            JSONArray friends = null;
-            ArrayList<class_detal> detal_list = new ArrayList<class_detal>();
-            try {
-            //    Log.d("asdadasd", content);
-                friends = new JSONArray(content);
-
-                for (int i = 0; i < friends.length(); i++) {
-
-                    JSONObject zakaz = friends.getJSONObject(i);
-                    Log.d("asdadasd",  zakaz.getString("NAME"));
-                    detal_list.add(new class_detal(
-                            zakaz.getInt("ID"),
-                            zakaz.getString("NAME"),
-                            zakaz.getInt("CUSTOMID"),
-                            zakaz.getString("V"),
-                            zakaz.getString("S"),
-                            zakaz.getString("G"),
-                            zakaz.optInt("MTARA_ID", 0),
-                            zakaz.getString("PREF"),
-                            zakaz.getString("SV"),
-                            zakaz.optInt("MOTDELKA_ID_POKR", 0),
-                            zakaz.optInt("MOTDELKA_ID_ZVET", 0)
-                    ));
-                }
-            } catch (JSONException e) {
-                e.printStackTrace();
-            }
-
-
-
-
-            fragmentTransaction = getFragmentManager().beginTransaction();
-            fragmentTransaction.replace(R.id.frgmCont, new Fragment1(detal_list, mtara_l));
-            fragmentTransaction.commit();
-
-
-        }
-
-        private String getContent(String path) throws IOException {
-            BufferedReader reader = null;
-            try {
-                String login = "admin";
-                String password = "4";
-                String[] sql = {
-                        "select * from WOTDELKA where MTARA_ID=" + mtara_l.get(0).ID
-                };
-                String params = formir_params_sql(login, password, sql);
-
-                byte[] data = null;
-                URL url = new URL(path);
-                HttpURLConnection c = (HttpURLConnection) url.openConnection();
-                c.setRequestMethod("POST");
-                c.setReadTimeout(10000);
-
-                c.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
-                OutputStream os = c.getOutputStream();
-                data = params.getBytes("UTF-8");
-                os.write(data);
-
-
-                c.connect();
-                reader = new BufferedReader(new InputStreamReader(c.getInputStream()));
-                StringBuilder buf = new StringBuilder();
-                String line = null;
-                while ((line = reader.readLine()) != null) {
-                    buf.append(line + "\n");
-                }
-                return (buf.toString());
-            } finally {
-                if (reader != null) {
-                    reader.close();
-                }
-            }
-        }
     }
 
 

@@ -1,5 +1,12 @@
 package com.nchauzov.gn;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 public class texclass {
     public static String formir_params_sql(String login, String password, String[] sql) {
         String sql_formir = "";
@@ -9,6 +16,50 @@ public class texclass {
         }
         String params = "{\"user\":\"" + login + "\",\"password\":\"" + password + "\"," + sql_formir + "\"query\":\"" + query + "\"}";
         return params;
+    }
+
+
+    public static String query_zapros(String[] sql) throws IOException {
+
+        BufferedReader reader = null;
+        try {
+            String login = "admin";
+            String password = "4";
+
+            String params = formir_params_sql(login, password, sql);
+
+
+            byte[] data = null;
+            URL url = new URL("http://www.web.gn/work/public/otdelka/query");
+            HttpURLConnection c = (HttpURLConnection) url.openConnection();
+            c.setRequestMethod("POST");
+            c.setReadTimeout(10000);
+
+            c.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
+            OutputStream os = c.getOutputStream();
+            data = params.getBytes("UTF-8");
+            os.write(data);
+
+
+            c.connect();
+            reader = new BufferedReader(new InputStreamReader(c.getInputStream()));
+            StringBuilder buf = new StringBuilder();
+            String line = null;
+            while ((line = reader.readLine()) != null) {
+                buf.append(line + "\n");
+            }
+
+
+
+
+            return (buf.toString());
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+
+
     }
 }
 
