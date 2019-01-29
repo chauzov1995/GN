@@ -63,6 +63,9 @@ public class komplektovka extends AppCompatActivity {
         });
 
 
+
+
+
         // поиск
         simpleSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -85,13 +88,28 @@ public class komplektovka extends AppCompatActivity {
         String query = simpleSearchView.getQuery().toString(); // get the query string currently in the text field
 
 
+
+     //   find_bd_id =804359.0;
+       //  new Task_get_detal().execute();
         ///временннооооо!!!!!!
-      //  find_bd_id = 203.0;
-       // new Task_get_elka().execute();
+        find_bd_id = 204.0;
+        new Task_get_elka().execute();
 
 
     }
 
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        //onupdate();
+
+    }
+
+   public void onupdate(){
+        new Task_get_elka().execute();
+
+    }
 
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
 
@@ -145,10 +163,10 @@ public class komplektovka extends AppCompatActivity {
                         zakaz.getInt("MTARATYPE_ID"),
                         zakaz.optInt("STATUS_ID", 1)
                 );
-
+                Log.d("asdasdad", mtara_l.ID+"");
 
                 String otvet2 = query_zapros(new String[]{
-                        "select * from WOTDELKA where MTARA_ID=" + mtara_l.ID
+                        "select a.*, b.name as MPARTSGROUPS_NAME  from WOTDELKA a left join MPARTSGROUPS b on b.ID = a.MPARTSGROUPS_ID  where a.MTARA_ID=" + mtara_l.ID
                 });
 
 
@@ -170,7 +188,9 @@ public class komplektovka extends AppCompatActivity {
                             zakaz2.getString("PREF"),
                             zakaz2.getString("SV"),
                             zakaz2.optInt("MOTDELKA_ID_POKR", 0),
-                            zakaz2.optInt("MOTDELKA_ID_ZVET", 0)
+                            zakaz2.optInt("MOTDELKA_ID_ZVET", 0),
+                            zakaz2.optInt("MPARTSGROUPS_ID", 0),
+                            zakaz2.getString("MPARTSGROUPS_NAME")
                     ));
                 }
 
@@ -178,10 +198,13 @@ public class komplektovka extends AppCompatActivity {
                 content = "";
 
             } catch (IOException ex) {
+
                 content = ex.getMessage();
+
             } catch (JSONException e) {
                 content = e.getMessage();
             }
+            Log.d("asdasdad", content);
             return content;
         }
 
@@ -206,7 +229,7 @@ public class komplektovka extends AppCompatActivity {
             try {
                 //Здесь пиши тяжеловестный код
                 content = query_zapros(new String[]{
-                        "select * from WOTDELKA where ID=" + find_bd_id
+                        "select a.*, b.name as MPARTSGROUPS_NAME from WOTDELKA a left join MPARTSGROUPS b on b.ID = a.MPARTSGROUPS_ID  where a.ID=" + find_bd_id
                 });
             } catch (IOException ex) {
                 content = ex.getMessage();
@@ -238,7 +261,9 @@ public class komplektovka extends AppCompatActivity {
                             zakaz.getString("PREF"),
                             zakaz.getString("SV"),
                             zakaz.optInt("MOTDELKA_ID_POKR", 0),
-                            zakaz.optInt("MOTDELKA_ID_ZVET", 0)
+                            zakaz.optInt("MOTDELKA_ID_ZVET", 0),
+                            zakaz.optInt("MPARTSGROUPS_ID", 0),
+                            zakaz.getString("MPARTSGROUPS_NAME")
                     ));
                 }
             } catch (JSONException e) {
@@ -252,6 +277,9 @@ public class komplektovka extends AppCompatActivity {
         }
 
     }
+
+
+
 
 
     @Override

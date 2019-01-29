@@ -1,5 +1,7 @@
 package com.nchauzov.gn;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -27,10 +29,10 @@ public class texclass {
             String password = "4";
 
             String params = formir_params_sql(login, password, sql);
-
+            Log.d("sql_params",params);
 
             byte[] data = null;
-            URL url = new URL("http://www.web.gn/work/public/otdelka/query");
+            URL url = new URL("http://www.work.gn/otdelka/query");
             HttpURLConnection c = (HttpURLConnection) url.openConnection();
             c.setRequestMethod("POST");
             c.setReadTimeout(10000);
@@ -38,6 +40,7 @@ public class texclass {
             c.setRequestProperty("Content-Length", "" + Integer.toString(params.getBytes().length));
             OutputStream os = c.getOutputStream();
             data = params.getBytes("UTF-8");
+
             os.write(data);
 
 
@@ -50,7 +53,7 @@ public class texclass {
             }
 
 
-
+            Log.d("sql_otvet",buf.toString());
 
             return (buf.toString());
         } finally {
