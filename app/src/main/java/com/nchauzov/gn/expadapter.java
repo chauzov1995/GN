@@ -20,10 +20,12 @@ public class expadapter extends BaseExpandableListAdapter {
     private ArrayList<ArrayList<class_detal>> mGroups;
     private Context mContext;
     ArrayList<String> mspis_partiy;
+    class_mtara   mtara;
 
-    public expadapter(Context context, ArrayList<ArrayList<class_detal>> groups, ArrayList<String> spis_partiy) {
+    public expadapter(Context context, ArrayList<ArrayList<class_detal>> groups, ArrayList<String> spis_partiy, class_mtara mtara) {
         mContext = context;
         mGroups = groups;
+        this.mtara=mtara;
         mspis_partiy = spis_partiy;
     }
 
@@ -78,7 +80,7 @@ public class expadapter extends BaseExpandableListAdapter {
         }
 
         // TextView textGroup = (TextView) convertView.findViewById(R.id.textGroup);
-        ((TextView) convertView.findViewById(R.id.textView9)).setText("Group " + mspis_partiy.get(groupPosition));
+        ((TextView) convertView.findViewById(R.id.textView9)).setText("Партия " + mspis_partiy.get(groupPosition));
        // ((TextView) convertView.findViewById(R.id.textView9)).setHeight(50);
         return convertView;
 
@@ -110,6 +112,7 @@ public class expadapter extends BaseExpandableListAdapter {
             public void onClick(View view) {
                 Intent intent = new Intent(mContext, detal_obzor.class);
                 intent.putExtra("detal", p  );
+                intent.putExtra("mtara", mtara);
                 mContext.startActivity(intent);
             }
         });

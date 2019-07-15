@@ -1,35 +1,31 @@
 package com.nchauzov.gn;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.os.AsyncTask;
-import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.IOException;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 
 import static com.nchauzov.gn.texclass.query_zapros;
 
 public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHolder> {
     private ArrayList<class_operac> mDataset;
-    Activity ctx;
+    komplektovka ctx;
     int mtara_id_slect;
 
     // Provide a reference to the views for each data item
@@ -51,7 +47,7 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public adapter_operac(ArrayList<class_operac> myDataset, int _mtara_id_slect, Activity _ctx) {
+    public adapter_operac(ArrayList<class_operac> myDataset, int _mtara_id_slect, komplektovka _ctx) {
         mDataset = myDataset;
         mtara_id_slect = _mtara_id_slect;
         ctx = _ctx;
@@ -89,7 +85,8 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
                                 operac_id_sele = p.ID;
                                 Log.d("(p.NAME)", (p.ID) + "");
                                 new Task_operac_vipoln().execute();
-                                new Fragment1.getspis_operac(ctx,).execute();
+
+                             //   ctx.onupdate();
 
 
                               //  new ctx.getspis_operac().execute();
@@ -119,6 +116,9 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
 
 
     private class Task_operac_vipoln extends AsyncTask<String, Void, String> {
+
+        ArrayList<class_detal> spis_ne_v_elk;
+int rezvip;
         @Override
         protected String doInBackground(String... path) {
 
@@ -127,6 +127,7 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
 
 
 
+// 1. получил все партии на ёлке   !OK
                 String MAGAZINETEXOPERquery = query_zapros(new String[]{
                         "select distinct(b.MPARTSGROUPS_ID) from WOTDELKA a " +
                                 "left join MAGAZINETEXOPER b ON a.MPARTSGROUPS_ID=b.MPARTSGROUPS_ID and current_flag=1 " +
@@ -141,66 +142,59 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
                 }
                 where_MTEXPROCID = where_MTEXPROCID.replaceAll(", $", "");
 
-
-                query_zapros(new String[]{
-                        "UPDATE MAGAZINETEXOPER set DateBegin = current_timestamp, DateEnd=current_timestamp where  MPARTSGROUPS_ID in (" + where_MTEXPROCID + ") and MTEXOPER_ID=" + operac_id_sele + " and current_flag=1"
+                // 2.получил все детали в этих партиях  !OK
+                String spisdet_part = query_zapros(new String[]{
+                        "select * from WOTDELKA where MPARTSGROUPS_ID in (" + where_MTEXPROCID + ")"
                 });
+                JSONArray spisdet_partjson = new JSONArray(spisdet_part);
+
+                // 3. проверил все ли детали лежат на ёлках, всем ли назначена ёлка , mtaraid
+             spis_ne_v_elk=new ArrayList<class_detal>();
+                for (int i = 0; i < spisdet_partjson.length(); i++) {
+                    JSONObject zakaz2 = spisdet_partjson.getJSONObject(i);
 
 
 
-
-/*
-
-                String[] CheckOpenCLoseOper = CheckOpenCLoseOper(mpartsgroup_id, 1, 100);
-                if (CheckOpenCLoseOper.equals("1")) {
-                    //      if (CheckOpenCLoseOper(mpartsgroup_id, 1, IBDataSet2.FieldByName("NN").AsInteger) = 1) {
-
-                    IBDataSet2.Edit;
-                    IBDataSet2.FieldByName("DateBegin").Value=DateOperBegin;
-                    IBDataSet2.Post;
-
-
-
-                    query_zapros(new String[]{
-                            "select M.ID, M.MAGAZINEID, M.MAGAZINETEXPROCID, M.MOPERID,   M.MPARTSGROUPS_ID, M.MTEXPROCID, M.NN, M.OPERTIME,  M.TEORDATEBEGIN, M.DateBegin,M.DateEnd,M.TEORDATEEND,  M.Current_Flag," +
-                                    " M.UserId1, M.UserId2, MDay_Work_Part_ID, M.Prim" +
-                                    " from MAGAZINETEXOPER M" +
-                                    " where M.MPARTSGROUPS_ID=" + DateOperEnd +
-                                    " order by MPARTSGROUPS_ID"
-                    });
-
-
-                }
-                // закроем операцию
-                CheckOpenCLoseOper = CheckOpenCLoseOper(mpartsgroup_id, 0, 100);
-                if (CheckOpenCLoseOper[0].equals("1")) {
-                    //     if (CheckOpenCLoseOper(mpartsgroup_id, 0, IBDataSet2.FieldByName("NN").AsInteger) = 1) {
-
-
-                    IBDataSet2.Edit;
-                    IBDataSet2.FieldByName("DateEnd").Value=DateOperEnd;
-                    IBDataSet2.Post;
-                    IBDataSet2.Active=false;
-                    IBDataSet2.Active=true;
-                    mpartsgroup_id.Refresh;
-                    IBDataSet2.Transaction.CommitRetaining;
-
-
-                    query_zapros(new String[]{
-                            "select M.ID, M.MAGAZINEID, M.MAGAZINETEXPROCID, M.MOPERID,   M.MPARTSGROUPS_ID, M.MTEXPROCID, M.NN, M.OPERTIME,  M.TEORDATEBEGIN, M.DateBegin,M.DateEnd,M.TEORDATEEND,  M.Current_Flag," +
-                                    " M.UserId1, M.UserId2, MDay_Work_Part_ID, M.Prim" +
-                                    " from MAGAZINETEXOPER M" +
-                                    " where M.MPARTSGROUPS_ID=" + DateOperEnd +
-                                    " order by MPARTSGROUPS_ID"
-                    });
-
-
+                    if(zakaz2.optInt("MTARA_ID", 0)==0){
+                        spis_ne_v_elk.add(new class_detal(
+                                zakaz2.getInt("ID"),
+                                zakaz2.getString("NAME"),
+                                zakaz2.getInt("CUSTOMID"),
+                                zakaz2.getString("V"),
+                                zakaz2.getString("S"),
+                                zakaz2.getString("G"),
+                                zakaz2.optInt("MTARA_ID", 0),
+                                zakaz2.getString("PREF"),
+                                zakaz2.getString("SV"),
+                                zakaz2.optInt("MOTDELKA_ID_POKR", 0),
+                                zakaz2.optInt("MOTDELKA_ID_ZVET", 0),
+                                zakaz2.optInt("MPARTSGROUPS_ID", 0),
+                                ""
+                        ));
+                    }
                 }
 
-*/
 
 
-                content = "Успех";
+
+if(spis_ne_v_elk.size()==0) {
+
+
+    query_zapros(new String[]{
+            "UPDATE MAGAZINETEXOPER set DateBegin = current_timestamp, DateEnd=current_timestamp where  MPARTSGROUPS_ID in (" + where_MTEXPROCID + ") and MTEXOPER_ID=" + operac_id_sele + " and current_flag=1"
+    });
+    rezvip=1;
+    content = "Успех";
+}else{
+    rezvip=2;
+    content="Операция не выполнена! Имеется "+spis_ne_v_elk.size()+" деталей которым не присвоена ёлка";
+
+}
+
+
+
+
+
             } catch (IOException ex) {
                 content = ex.getMessage();
             } catch (JSONException e) {
@@ -211,67 +205,169 @@ public class adapter_operac extends RecyclerView.Adapter<adapter_operac.ViewHold
         }
 
 
-        String[] CheckOpenCLoseOper(int PartID, int Open, int NN) throws IOException, JSONException {
-            String[] otvet_sats = new String[2];
-
-
-            if (Open == 1) {// проверим при открытии новой операции все ли другие закрыты
-
-
-                String count_query = query_zapros(new String[]{
-                        "select Count(ID) from MagazineTexOper where MPARTSGROUPS_ID=" + PartID + " and DateBegin is Null and DateEnd is Not Null"
-                });
-
-                int count = new JSONArray(count_query).getJSONObject(0).getInt("COUNT");
-
-
-                if (count > 0) {
-
-                    otvet_sats[0] = "0";
-                    otvet_sats[1] = "Нельзя \"Открыть операцию\" если уже открыта другая";
-                    return otvet_sats;
-
-                }
-            }
-            if (Open == 0) {// проверим при закрытии операции открыта ли она
-/*
-                if (IBDataSet2.FieldByName("DateBegin").
-                        IsNull) {
-                    Toast.makeText(ctx, "Операция еще не открыта", Toast.LENGTH_LONG).show();
-                    return 0;
-                }
-*/
-            }
-            if (Open == 1) { // проверим при открытии новой операции вдруг есть пропущенные
-                String count_query = query_zapros(new String[]{
-                        "select Count(ID) from MagazineTexOper where MPARTSGROUPS_ID=" +
-                                PartID + " and NN<" +
-                                NN + " and DateEnd is Null"
-                });
-                int count = new JSONArray(count_query).getJSONObject(0).getInt("COUNT");
-
-
-                if (count > 0) {
-                    //  return "Есть не закрытые операции на более ранней стадии";
-
-                    otvet_sats[0] = "0";
-                    otvet_sats[1] = "Есть не закрытые операции на более ранней стадии";
-                    return otvet_sats;
-                }
-            }
-            otvet_sats[0] = "1";
-            otvet_sats[1] = "Успех";
-            return otvet_sats;
-        }
-
 
         @Override
         protected void onPostExecute(String content) {
             Log.d("asdasd", content);
-            Toast.makeText(ctx, content, Toast.LENGTH_LONG).show();
+            switch (rezvip) {
+                case 1:
+                    Toast.makeText(ctx, content, Toast.LENGTH_LONG).show();
+                    break;
+                case 2:
 
-            // checkBox.setClickable(false);
-            //checkBox.setEnabled(false);
+                 // int nach_size= 1;// spis_ne_v_elk.size();
+            //    for (final class_detal elem : spis_ne_v_elk) {
+
+                    recursalert( spis_ne_v_elk,0 );
+
+            //        nach_size++;
+            //    }
+
+                // checkBox.setClickable(false);
+                //checkBox.setEnabled(false);
+                    break;
+            }
+        }
+
+       void  recursalert(final ArrayList<class_detal> spisdet, final int getpor){
+           final int nach_size=spisdet.size();
+            if(getpor>=nach_size){
+                new Task_operac_vipoln().execute();
+                ctx.onupdate();
+                return;
+            }
+           final class_detal elem=spisdet.get(getpor);
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(ctx);
+            builder.setTitle(nach_size-getpor + " деталям(и) не присвоена ёлка")
+                    .setMessage("Положить " + elem.NAME + " в " + mtara_id_slect + "?")
+
+                    .setCancelable(false)
+                    .setPositiveButton("Да", new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int id) {
+
+
+                            new Task_poloj_v_elku(ctx, mtara_id_slect, elem).execute();
+
+                            recursalert( spisdet, getpor+1);
+                        }
+                    })
+                    .setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                   // recursalert( spisdet, getpor+1);
+                                }
+                            }
+
+                    );
+            AlertDialog alert = builder.create();
+            alert.show();
+
+        }
+    }
+
+
+    public static class Task_poloj_v_elku extends AsyncTask<Void, Void, String> {
+
+        AppCompatActivity ctx;
+        int mtara_id_upd;
+        class_detal detal;
+
+        public Task_poloj_v_elku(komplektovka ctx, int mtara_id_upd, class_detal detal_id) {
+            this.ctx = ctx;
+            this.mtara_id_upd = mtara_id_upd;
+            this.detal = detal_id;
+            Log.d("dsadas", "asdasd");
+        }
+
+        @Override
+        protected String doInBackground(Void... voids) {
+
+            String content;
+            try {
+                //Здесь пиши тяжеловестный код
+                boolean pustaya_elka = false;
+                boolean gotova_k_komplerktazii = false;
+                boolean elka_estb_v_base = false;
+                boolean sovmestimaya_elka = false;
+
+                Log.d("ewererwr", "pustaya_elka" + pustaya_elka + " gotova_k_komplerktazii" + gotova_k_komplerktazii + " elka_estb_v_base" + elka_estb_v_base + " sovmestimaya_elka" + sovmestimaya_elka);
+
+                //проверим пустая ли ёлка
+                String otvet = query_zapros(new String[]{
+                        "SELECT * FROM WOTDELKA where MTARA_ID=" + mtara_id_upd,
+                });
+                JSONArray json_otvet = new JSONArray(otvet);
+                if (json_otvet.length() == 0) pustaya_elka = true; //ёлка пустая
+
+                //если ёлка пустая нужно узнать готова ли к комплектации (в мтаралог является ли статус 2 )
+                if (pustaya_elka) {
+                    String otvet2 = query_zapros(new String[]{
+                            "SELECT STATUS_ID FROM MTARALOG where id=(SELECT MAX(id) FROM MTARALOG WHERE mtara_id = " + mtara_id_upd + ")"
+                    });
+                    JSONArray json_otvet2 = new JSONArray(otvet2);
+                    if (json_otvet2.length() > 0) elka_estb_v_base = true; //елка есть в логе
+                    if (elka_estb_v_base) {
+                        int STATUS_ID = json_otvet2.getJSONObject(0).optInt("STATUS_ID", 1);
+                        if (STATUS_ID == 2) gotova_k_komplerktazii = true; //ёлка имеет статус 2
+                    } else {
+                        //если елки вообще нет в базе то нужно её создать
+                        query_zapros(new String[]{
+                                "INSERT INTO MTARALOG (MTARA_ID, STATUS_ID) VALUES (" + mtara_id_upd + ", 2)"
+                        });
+                        gotova_k_komplerktazii = true; //ёлка имеет статус 2
+                    }
+                } else {
+
+
+                    String otvet3 = query_zapros(new String[]{
+                            "select DISTINCT c.ID, c.NAME, c.MTARATYPE_ID, b.STATUS_ID from WOTDELKA a " +
+                                    "LEFT JOIN MTARALOG b ON a.MTARA_ID=b.MTARA_ID " +
+                                    "LEFT JOIN MTARA c ON a.MTARA_ID=c.ID " +
+                                    "where a.SV='" + detal.SV + "' and a.MOTDELKA_ID_POKR=" + detal.MOTDELKA_ID_POKR + " and a.MOTDELKA_ID_ZVET=" + detal.MOTDELKA_ID_ZVET + " AND b.STATUS_ID=2 "
+                    });
+
+                    JSONArray friends = new JSONArray(otvet3);
+                    for (int i = 0; i < friends.length(); i++) {
+                        int ID = friends.getJSONObject(i).getInt("ID");
+                        if (ID == mtara_id_upd) sovmestimaya_elka = true;
+
+                    }
+                }
+                //либо пустая ёлка либо
+
+                if (gotova_k_komplerktazii || sovmestimaya_elka) {
+
+                    query_zapros(new String[]{
+                            "UPDATE WOTDELKA SET MTARA_ID=" + mtara_id_upd + " where ID=" + detal.ID,
+                    });
+                    content = "";
+                } else {
+                    content = "1";
+                }
+
+
+                Log.d("ewererwr", "pustaya_elka" + pustaya_elka + " gotova_k_komplerktazii" + gotova_k_komplerktazii + " elka_estb_v_base" + elka_estb_v_base + " sovmestimaya_elka" + sovmestimaya_elka);
+
+            } catch (IOException ex) {
+                content = ex.getMessage();
+            } catch (JSONException e) {
+                content = e.getMessage();
+            }
+            return content;
+        }
+
+        @Override
+        protected void onPostExecute(String content) {
+            //здесь обновление UI
+            Log.d("asdas", content);
+            if (content.equals("1")) {
+                Toast.makeText(ctx, "В эту ёлку нельзя положить деталь", Toast.LENGTH_LONG).show();
+            } else {
+
+
+            }
+
         }
     }
 }

@@ -1,15 +1,8 @@
 package com.nchauzov.gn;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.CardView;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
@@ -18,25 +11,26 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.cardview.widget.CardView;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 
 import static com.nchauzov.gn.texclass.query_zapros;
-import static com.nchauzov.gn.texclass.formir_params_sql;
 
 public class detal_obzor extends AppCompatActivity {
 
+
     TextView textView6;
-    TextView textView15;
+    Button button_elk;
     int mtara_id_upd;
     class_detal detal;
     CardView cview, cview_new;
@@ -55,7 +49,7 @@ public class detal_obzor extends AppCompatActivity {
 
 
         detal = (class_detal) getIntent().getExtras().getSerializable("detal");
-
+        class_mtara mtara = (class_mtara) getIntent().getExtras().getSerializable("mtara");
         //   textView6 = (TextView) findViewById(R.id.textView6);
 
         LinearLayout ll_perel = (LinearLayout) findViewById(R.id.ll_perel);
@@ -64,7 +58,7 @@ public class detal_obzor extends AppCompatActivity {
         TextView textView12 = (TextView) findViewById(R.id.textView12);
         TextView textView13 = (TextView) findViewById(R.id.textView13);
         TextView textView14 = (TextView) findViewById(R.id.textView14);
-        textView15 = (TextView) findViewById(R.id.textView15);
+        button_elk = (Button) findViewById(R.id.button_elk);
         TextView textView16 = (TextView) findViewById(R.id.textView16);
         Button button3 = (Button) findViewById(R.id.button3);
         Button button2_new = (Button) findViewById(R.id.button2_new);
@@ -84,14 +78,23 @@ public class detal_obzor extends AppCompatActivity {
         textView12.setText("Ширина: " + detal.S);
         textView13.setText("Глубина: " + detal.G);
         textView14.setText("Заказ: " + detal.CUSTOMID + "");
-        textView15.setText("Принадлежит ёлке: " + detal.MTARA_ID + "");
+        button_elk.setText( detal.MTARA_ID + "");
         textView16.setText("Тип детали: " + detal.PREF);
+
+        if(mtara.STATUS_ID==3){
+            button3.setVisibility(View.GONE);
+        }
 
         if (detal.MTARA_ID == 0) {//если тара не назаначена то лезть в интернет
             ll_perel.setVisibility(View.GONE);
             new Task_get_elka_recom().execute();
         }
 
+        button_elk.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View r) {
+         //       new Task_get_elka(detal.MTARA_ID).execute();
+            }
+        });
         button3.setOnClickListener(new View.OnClickListener() {
             public void onClick(View r) {
                 new Task_elka_set_null(detal_obzor.this, detal).execute();
@@ -153,6 +156,8 @@ public class detal_obzor extends AppCompatActivity {
 
             String content;
             try {
+                detal.MTARA_ID=0;
+
                 query_zapros(new String[]{
                         "UPDATE WOTDELKA SET MTARA_ID=null where ID=" + detal.ID,
                 });
@@ -171,6 +176,7 @@ public class detal_obzor extends AppCompatActivity {
             ((LinearLayout) ctx.findViewById(R.id.ll_perel)).setVisibility(View.GONE);
             ((CardView) ctx.findViewById(R.id.cview_new)).setVisibility(View.GONE);
             ((CardView) ctx.findViewById(R.id.cview)).setVisibility(View.GONE);
+
             new Task_get_elka_recom().execute();
 
         }
@@ -230,6 +236,7 @@ public class detal_obzor extends AppCompatActivity {
                 mRecyclerView.setAdapter(mAdapter);
 
             } else {
+                Log.d("asdasdasdas",detal.MTARA_ID+"");
                 if (detal.MTARA_ID == 0) {
                     cview_new.setVisibility(View.VISIBLE);
                 }
@@ -238,117 +245,9 @@ public class detal_obzor extends AppCompatActivity {
 
     }
 
-/*
-    public static class Task_perenos_new extends AsyncTask<String, Void, String> {
-
-
-        detal_obzor ctx;
-        int mtara_id_upd;
-        class_detal detal;
-
-        public Task_perenos_new(detal_obzor ctx, int mtara_id_upd, class_detal detal) {
-            this.ctx = ctx;
-            this.mtara_id_upd = mtara_id_upd;
-
-            this.detal = detal;
-        }
-
-        @Override
-        protected String doInBackground(String... path) {
-
-            String content;
-            try {
-                content = query_zapros(new String[]{
-                        "UPDATE WOTDELKA SET MTARA_ID=" + mtara_id_upd + " where ID=" + detal.ID,
-                        "INSERT INTO MTARALOG (MTARA_ID, STATUS_ID) VALUES (" + mtara_id_upd + ", 2)"
-                });
-            } catch (IOException ex) {
-                content = ex.getMessage();
-            }
-
-            return content;
-        }
-
-        @Override
-        protected void onPostExecute(String content) {
-            ((TextView) ctx.findViewById(R.id.textView15)).setText("Принадлежит ёлке: " + mtara_id_upd + "");
-            ((CardView) ctx.findViewById(R.id.cview_new)).setVisibility(View.GONE);
-            ((CardView) ctx.findViewById(R.id.cview)).setVisibility(View.GONE);
-
-        }
-
-
-    }
-
-
-    private class Task_get_spis_elka extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... path) {
-
-            String content;
-            try {
-                String otvet = query_zapros(new String[]{
-                        "select DISTINCT mtara_id FROM MTARALOG where STATUS_ID=2"
-                });
-
-                ArrayList<Integer> mtara_l;
-                mtara_l = new ArrayList<Integer>();
-                JSONArray friends = null;
-                Log.d("psad", otvet);
-                try {
-                    friends = new JSONArray(otvet);
-                    for (int i = 0; i < friends.length(); i++) {
-                        JSONObject zakaz = friends.getJSONObject(i);
-                        mtara_l.add(zakaz.getInt("MTARA_ID"));
-                    }
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-
-
-                Log.d("uje_estb", "" + mtara_l.size());
-                boolean uje_estb = false;
-                for (int i = 0; i < mtara_l.size(); i++) {
-                    if (mtara_l.get(i) == mtara_id_upd) {
-                        uje_estb = true;
-
-                    }
-                    Log.d("uje_estb", mtara_l.get(i) + " " + mtara_id_upd);
-                }
-
-
-                if (uje_estb) {
-                    content = "1";
-                } else {
-
-                    new Task_perenos_new(detal_obzor.this, mtara_id_upd, detal).execute();
-
-                    content = "";
-                }
-
-
-            } catch (IOException ex) {
-                content = ex.getMessage();
-            }
-
-            return content;
-        }
-
-
-        @Override
-        protected void onPostExecute(String content) {
-
-            if (content.equals("1"))
-                Toast.makeText(detal_obzor.this, "Нельзя положить в эту ёлку", Toast.LENGTH_LONG).show();
-
-        }
-
-    }
-*/
-
     public static class Task_poloj_v_elku extends AsyncTask<Void, Void, String> {
 
-        detal_obzor ctx;
+        AppCompatActivity ctx;
         int mtara_id_upd;
         class_detal detal;
 
@@ -444,9 +343,11 @@ public class detal_obzor extends AppCompatActivity {
                 Toast.makeText(ctx, "В эту ёлку нельзя положить деталь", Toast.LENGTH_LONG).show();
             } else {
                 ((LinearLayout) ctx.findViewById(R.id.ll_perel)).setVisibility(View.VISIBLE);
-                ((TextView) ctx.findViewById(R.id.textView15)).setText("Принадлежит ёлке: " + mtara_id_upd + "");
+                ((Button) ctx.findViewById(R.id.button_elk)).setText( mtara_id_upd + "");
                 ((CardView) ctx.findViewById(R.id.cview_new)).setVisibility(View.GONE);
                 ((CardView) ctx.findViewById(R.id.cview)).setVisibility(View.GONE);
+
+
             }
 
         }

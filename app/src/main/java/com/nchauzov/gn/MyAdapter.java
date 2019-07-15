@@ -1,23 +1,20 @@
 package com.nchauzov.gn;
 
-import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.os.Parcelable;
-import android.support.annotation.NonNull;
-import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.io.Serializable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.RecyclerView;
+
 import java.util.ArrayList;
 
 public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     private ArrayList<class_detal> mDataset;
-   Activity ctx;
+   AppCompatActivity ctx;
 
     // Provide a reference to the views for each data item
     // Complex data items may need more than one view per item, and
@@ -38,7 +35,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     }
 
     // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(ArrayList<class_detal> myDataset, Activity _ctx) {
+    public MyAdapter(ArrayList<class_detal> myDataset, AppCompatActivity _ctx) {
         mDataset = myDataset;
         ctx=_ctx;
     }
