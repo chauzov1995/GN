@@ -13,6 +13,11 @@
             android:icon="@drawable/ic_menu_gallery"
             android:title="Операция" />
 
+        <item
+            android:id="@+id/nav_sklad"
+            android:icon="@drawable/ic_menu_camera"
+            android:title="Склад" />
+
     </group>
 
     <item android:title="Communicate">

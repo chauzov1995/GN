@@ -42,7 +42,7 @@ import java.util.Set;
 
 import static com.nchauzov.gn.texclass.query_zapros;
 
-public class komplektovka extends AppCompatActivity  {
+public class komplektovka extends AppCompatActivity {
 
     LinearLayout skan_elka, ll_komplload;
     private FragmentTransaction fragmentTransaction;
@@ -68,9 +68,8 @@ public class komplektovka extends AppCompatActivity  {
     private ViewfinderView viewfinderView;
 
 
-
     @Override
-    protected void onCreate(Bundle savedInstanceState)  {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_komplektovka);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -87,13 +86,11 @@ public class komplektovka extends AppCompatActivity  {
         prog_load = (ConstraintLayout) findViewById(R.id.prog_load);
 
 
-
         skan_elka = (LinearLayout) findViewById(R.id.skan_elka);
         ll_komplload = (LinearLayout) findViewById(R.id.ll_komplload);
 
         ll_komplload.setVisibility(View.GONE);
         prog_load.setVisibility(View.GONE);
-
 
 
         tabHost.setup();
@@ -113,12 +110,10 @@ public class komplektovka extends AppCompatActivity  {
         tabHost.setCurrentTab(0);
 
 
-
         skan_elka.setOnClickListener(new View.OnClickListener() {
             public void onClick(View r) {
 
-              //  new IntentIntegrator(komplektovka.this).initiateScan(); // `this` is the current Activity
-
+                //  new IntentIntegrator(komplektovka.this).initiateScan(); // `this` is the current Activity
 
 
                 new IntentIntegrator(komplektovka.this).setOrientationLocked(false).setCaptureActivity(CustomScannerActivity.class).initiateScan();
@@ -141,9 +136,6 @@ public class komplektovka extends AppCompatActivity  {
         });
 
 
-
-
-
         // поиск
         simpleSearchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
@@ -163,32 +155,28 @@ public class komplektovka extends AppCompatActivity  {
         });
 
 
-    //    String query = simpleSearchView.getQuery().toString(); // get the query string currently in the text field
+        //    String query = simpleSearchView.getQuery().toString(); // get the query string currently in the text field
 
 
-
-     //   find_bd_id =804359.0;
-       //  new Task_get_detal().execute();
+        //   find_bd_id =804359.0;
+        //  new Task_get_detal().execute();
         ///временннооооо!!!!!!
 
-      //  new Task_get_elka(204.0).execute();
+        //  new Task_get_elka(204.0).execute();
 
-    //    mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
-     //   setContentView(mScannerView);                // Set the scanner view as the content view
-
-
- }
+        //    mScannerView = new ZXingScannerView(this);   // Programmatically initialize the scanner view
+        //   setContentView(mScannerView);                // Set the scanner view as the content view
 
 
+    }
 
 
+    public void onupdate() {
+        if (mtara_l != null) {
 
-    public void onupdate(){
-        if( mtara_l!=null) {
+            new Task_get_elka(Double.valueOf(mtara_l.ID)).execute();
 
-           new Task_get_elka(Double.valueOf(mtara_l.ID)).execute();
-
-       }
+        }
     }
 
     // Get the results:
@@ -196,17 +184,16 @@ public class komplektovka extends AppCompatActivity  {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
         IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if(result != null) {
-            if(result.getContents() == null) {
+        if (result != null) {
+            if (result.getContents() == null) {
                 Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
 
 
-
                 Double contents = Double.parseDouble(result.getContents()); // This will contain your scan result
 
-                        parse_strich(contents);
+                parse_strich(contents);
 
 
             }
@@ -215,20 +202,16 @@ public class komplektovka extends AppCompatActivity  {
         }
 
 
-
     }
 
     void parse_strich(Double contents) {
 
 
-
-
-
         if ((contents > 1500000000) && (contents < 1600000000)) { // код тары
 
-          //  fragmentTransaction = getFragmentManager().beginTransaction();
-          //  fragmentTransaction.replace(R.id.frgmCont, new load_pb());
-          //  fragmentTransaction.commit();
+            //  fragmentTransaction = getFragmentManager().beginTransaction();
+            //  fragmentTransaction.replace(R.id.frgmCont, new load_pb());
+            //  fragmentTransaction.commit();
             find_bd_id = contents - 1500000000;
             new Task_get_elka(find_bd_id).execute();
 
@@ -243,19 +226,17 @@ public class komplektovka extends AppCompatActivity  {
     }
 
 
-
-
     public class Task_get_elka extends AsyncTask<String, Void, String> {
 
-        ArrayList<class_operac>   operac_list;
+        ArrayList<class_operac> operac_list;
         ArrayList<class_detal> detal_list;
         Double find_bd_id;
 
 
-        public Task_get_elka(Double find_bd_id){
+        public Task_get_elka(Double find_bd_id) {
             ll_komplload.setVisibility(View.GONE);
             prog_load.setVisibility(View.VISIBLE);
-            this.find_bd_id=find_bd_id;
+            this.find_bd_id = find_bd_id;
         }
 
         @Override
@@ -278,7 +259,7 @@ public class komplektovka extends AppCompatActivity  {
                         zakaz.getInt("MTARATYPE_ID"),
                         zakaz.optInt("STATUS_ID", 1)
                 );
-                Log.d("asdasdad", mtara_l.ID+"");
+                Log.d("asdasdad", mtara_l.ID + "");
 
                 String otvet2 = query_zapros(new String[]{
                         "select a.*, b.name as MPARTSGROUPS_NAME  from WOTDELKA a left join MPARTSGROUPS b on b.ID = a.MPARTSGROUPS_ID  where a.MTARA_ID=" + mtara_l.ID
@@ -310,80 +291,61 @@ public class komplektovka extends AppCompatActivity  {
                 }
 
 
-
-
-
-
                 //загрузка операций СТАРТ  3
 
-if(mtara_l.STATUS_ID==3) {
+                if (mtara_l.STATUS_ID == 3) {
 
 
-    String where_MTEXPROCID = "";
-    for (int i = 0; i < detal_list.size(); i++) {
-        where_MTEXPROCID += "'" + detal_list.get(i).MPARTSGROUPS_ID + "', ";
-    }
-    where_MTEXPROCID = where_MTEXPROCID.replaceAll(", $", "");
-    String otvet3 = "";
-    if (!where_MTEXPROCID.isEmpty()) {
-        otvet3 = query_zapros(new String[]{
-                "select  b.*, a.mpartsgroups_id from MAGAZINETEXOPER a " +
-                        " LEFT JOIN MTEXOPER b ON a.MTEXOPER_ID = b.ID" +
-                        " where a.mpartsgroups_id IN (" + where_MTEXPROCID + ") and a.current_flag=1"
-        });
-    }
+                    String where_MTEXPROCID = "";
+                    for (int i = 0; i < detal_list.size(); i++) {
+                        where_MTEXPROCID += "'" + detal_list.get(i).MPARTSGROUPS_ID + "', ";
+                    }
+                    where_MTEXPROCID = where_MTEXPROCID.replaceAll(", $", "");
+                    String otvet3 = "";
+                    if (!where_MTEXPROCID.isEmpty()) {
+                        otvet3 = query_zapros(new String[]{
+                                "select  b.*, a.mpartsgroups_id from MAGAZINETEXOPER a " +
+                                        " LEFT JOIN MTEXOPER b ON a.MTEXOPER_ID = b.ID" +
+                                        " where a.mpartsgroups_id IN (" + where_MTEXPROCID + ") and a.current_flag=1"
+                        });
+                    }
 
 
-    JSONArray friends3 = null;
-    operac_list = new ArrayList<class_operac>();
+                    JSONArray friends3 = null;
+                    operac_list = new ArrayList<class_operac>();
 
-    friends3 = new JSONArray(otvet3);
+                    friends3 = new JSONArray(otvet3);
 
-    for (int i = 0; i < friends3.length(); i++) {
+                    for (int i = 0; i < friends3.length(); i++) {
 
-        JSONObject zakaz3 = friends3.getJSONObject(i);
-        //  Log.d("asdadasd", zakaz.getString("NAME"));
-        int Id_zakaza = zakaz3.getInt("ID");
+                        JSONObject zakaz3 = friends3.getJSONObject(i);
+                        //  Log.d("asdadasd", zakaz.getString("NAME"));
+                        int Id_zakaza = zakaz3.getInt("ID");
 
-        boolean zanesti = true;
-        for (class_operac curVal : operac_list) {
+                        boolean zanesti = true;
+                        for (class_operac curVal : operac_list) {
 
-            Log.d("curVal", curVal.NAME);
-            if (curVal.ID == (Id_zakaza)) {
-                zanesti = false;
-            }
-        }
-        //zanesti=true;
-        if (zanesti) {
-            operac_list.add(new class_operac(
-                    Id_zakaza,
-                    zakaz3.optString("NAME", ""),
-                    zakaz3.optDouble("OPERTIME", 0.0),
-                    zakaz3.optInt("MTEXPROCID", 0),
-                    zakaz3.optInt("MOPERID", 0),
-                    zakaz3.optInt("NN", 0),
-                    zakaz3.optBoolean("IS_CHECK_POINT", false)
-            ));
-        }
-    }
+                            Log.d("curVal", curVal.NAME);
+                            if (curVal.ID == (Id_zakaza)) {
+                                zanesti = false;
+                            }
+                        }
+                        //zanesti=true;
+                        if (zanesti) {
+                            operac_list.add(new class_operac(
+                                    Id_zakaza,
+                                    zakaz3.optString("NAME", ""),
+                                    zakaz3.optDouble("OPERTIME", 0.0),
+                                    zakaz3.optInt("MTEXPROCID", 0),
+                                    zakaz3.optInt("MOPERID", 0),
+                                    zakaz3.optInt("NN", 0),
+                                    zakaz3.optBoolean("IS_CHECK_POINT", false)
+                            ));
+                        }
+                    }
 
-}
+                }
                 //загрузка операций ЕНД
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
                 content = "";
@@ -401,12 +363,6 @@ if(mtara_l.STATUS_ID==3) {
 
         @Override
         protected void onPostExecute(String content) {
-
-
-
-
-
-
 
 
             textView5.setText(mtara_l.NAME);
@@ -447,19 +403,15 @@ if(mtara_l.STATUS_ID==3) {
             });
 
 
-
-
-
-
             ArrayList<String> spis_partiy_do = new ArrayList<String>();
             for (class_detal group : detal_list) {
                 spis_partiy_do.add(group.MPARTSGROUPS_NAME);
             }
             //ArrayList<String> mGroupsArray = new LinkedHashSet<>(spis_partiy_do);
-            Set<String> mGroupsArray=new LinkedHashSet<>(spis_partiy_do);
+            Set<String> mGroupsArray = new LinkedHashSet<>(spis_partiy_do);
 
             ArrayList<ArrayList<class_detal>> groups = new ArrayList<ArrayList<class_detal>>();
-            ArrayList<String> spis_partiy_do_arr = new    ArrayList<String>();
+            ArrayList<String> spis_partiy_do_arr = new ArrayList<String>();
             for (String group : mGroupsArray) {
                 spis_partiy_do_arr.add(group);
                 ArrayList<class_detal> children1 = new ArrayList<class_detal>();
@@ -471,21 +423,19 @@ if(mtara_l.STATUS_ID==3) {
                 // добавляем в коллекцию коллекций
                 groups.add(children1);
             }
-            expadapter adapter = new expadapter(komplektovka.this, groups,spis_partiy_do_arr, mtara_l);
+            expadapter adapter = new expadapter(komplektovka.this, groups, spis_partiy_do_arr, mtara_l);
             expListView.setAdapter(adapter);
 
 
-
-
             tabHost.getTabWidget().getChildTabViewAt(1).setVisibility(View.GONE);
-            if(mtara_l.STATUS_ID==3) {
+            if (mtara_l.STATUS_ID == 3) {
                 rv_operac.setHasFixedSize(true);
                 mLayoutManager = new LinearLayoutManager(komplektovka.this);
                 rv_operac.setLayoutManager(mLayoutManager);
                 mAdapter = new adapter_operac(operac_list, mtara_l.ID, komplektovka.this);
                 rv_operac.setAdapter(mAdapter);
                 tabHost.getTabWidget().getChildTabViewAt(1).setVisibility(View.VISIBLE);
-            }else{
+            } else {
                 tabHost.getTabWidget().getChildTabViewAt(1).setVisibility(View.GONE);
             }
 
@@ -496,7 +446,6 @@ if(mtara_l.STATUS_ID==3) {
 
 
     }
-
 
 
     private class Task_skompl extends AsyncTask<String, Void, String> {
@@ -527,7 +476,6 @@ if(mtara_l.STATUS_ID==3) {
 
 
     }
-
 
 
     public class Task_get_detal extends AsyncTask<String, Void, String> {
@@ -582,13 +530,12 @@ if(mtara_l.STATUS_ID==3) {
             }
 
             Intent intent = new Intent(komplektovka.this, detal_obzor.class);
-            intent.putExtra("detal", det_list.get(0) );
+            intent.putExtra("detal", det_list.get(0));
             intent.putExtra("mtara", mtara_l);
             komplektovka.this.startActivity(intent);
         }
 
     }
-
 
 
     @Override
@@ -598,14 +545,13 @@ if(mtara_l.STATUS_ID==3) {
     }
 
 
-
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int i = item.getItemId();
         if (i == android.R.id.home) {
             finish();
-        }else if (i == R.id.refrech) {
-           onupdate();
+        } else if (i == R.id.refrech) {
+            onupdate();
 
         } else {
         }
