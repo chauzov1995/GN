@@ -25,11 +25,7 @@ import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
-import com.journeyapps.barcodescanner.CaptureManager;
-import com.journeyapps.barcodescanner.DecoratedBarcodeView;
-import com.journeyapps.barcodescanner.ViewfinderView;
+
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -62,10 +58,8 @@ public class komplektovka extends AppCompatActivity {
     TabHost tabHost;
     ExpandableListView expListView;
 
-    private CaptureManager capture;
-    private DecoratedBarcodeView barcodeScannerView;
-    private Button switchFlashlightButton;
-    private ViewfinderView viewfinderView;
+   private Button switchFlashlightButton;
+
 
 
     @Override
@@ -115,8 +109,6 @@ public class komplektovka extends AppCompatActivity {
 
                 //  new IntentIntegrator(komplektovka.this).initiateScan(); // `this` is the current Activity
 
-
-                new IntentIntegrator(komplektovka.this).setOrientationLocked(false).setCaptureActivity(CustomScannerActivity.class).initiateScan();
 
 
    /*
@@ -183,23 +175,7 @@ public class komplektovka extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 
-        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (result != null) {
-            if (result.getContents() == null) {
-                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
-            } else {
-                Toast.makeText(this, "Scanned: " + result.getContents(), Toast.LENGTH_LONG).show();
 
-
-                Double contents = Double.parseDouble(result.getContents()); // This will contain your scan result
-
-                parse_strich(contents);
-
-
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
-        }
 
 
     }

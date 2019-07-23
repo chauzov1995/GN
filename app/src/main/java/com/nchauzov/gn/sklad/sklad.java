@@ -1,6 +1,11 @@
 package com.nchauzov.gn.sklad;
 
+import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -11,24 +16,37 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
-import com.google.zxing.integration.android.IntentIntegrator;
-import com.google.zxing.integration.android.IntentResult;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.JsonHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
 import com.nchauzov.gn.R;
+import com.symbol.emdk.EMDKManager;
+import com.symbol.emdk.EMDKManager.EMDKListener;
+import com.symbol.emdk.EMDKResults;
+import com.symbol.emdk.barcode.BarcodeManager;
+import com.symbol.emdk.barcode.ScanDataCollection;
+import com.symbol.emdk.barcode.Scanner;
+import com.symbol.emdk.barcode.Scanner.DataListener;
+import com.symbol.emdk.barcode.Scanner.StatusListener;
+import com.symbol.emdk.barcode.ScannerConfig;
+import com.symbol.emdk.barcode.ScannerException;
+import com.symbol.emdk.barcode.ScannerInfo;
+import com.symbol.emdk.barcode.ScannerResults;
+import com.symbol.emdk.barcode.StatusData;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -46,7 +64,19 @@ import cz.msebera.android.httpclient.Header;
 import static androidx.core.content.FileProvider.getUriForFile;
 
 
-public class sklad extends AppCompatActivity {
+public class sklad extends AppCompatActivity  implements EMDKListener,  DataListener, StatusListener, BarcodeManager.ScannerConnectionListener {
+
+    private ProgressBar progressBar3;
+    // Declare a variable to store EMDKManager object
+    private EMDKManager emdkManager = null;
+
+    // Declare a variable to store Barcode Manager object
+    private BarcodeManager barcodeManager = null;
+
+    // Declare a variable to hold scanner device to scan
+    private Scanner scanner = null;
+
+
 
     File directory_file;
     private TextView mSelectText;
@@ -57,16 +87,304 @@ public class sklad extends AppCompatActivity {
 
 
     @Override
-    protected void onResume() {
-        super.onResume();
+    public void onOpened(EMDKManager emdkManager) {
 
-        zaproz(tek_zakaz);
+        this.emdkManager = emdkManager;
+
+
+        // Acquire barcode manager resources
+        barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
+        if(barcodeManager == null)
+        {
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
+        }
+
+        // Add connection listener
+        if (barcodeManager != null) {
+            barcodeManager.addConnectionListener(this);
+            initScanner();
+        }
+
+
     }
+
+
+    @Override
+    public void onClosed() {
+
+        try {
+            if (emdkManager != null) {
+                // Release all the resources
+                emdkManager.release();
+                emdkManager = null;
+            }
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onStatus(StatusData statusData) {
+
+        StatusData.ScannerStates state = statusData.getState();
+        String statusString = statusData.getFriendlyName()+" is " + state.toString().toLowerCase();
+
+
+
+        switch(state) {
+            case IDLE:
+                try {
+                    scanner.read();
+                } catch (ScannerException e) {
+                    e.printStackTrace();
+
+                }
+                break;
+        }
+    }
+    @Override
+    public void onData(ScanDataCollection scanDataCollection) {
+        // TODO Auto-generated method stub
+
+
+        // The ScanDataCollection object gives scanning result and
+// the collection of ScanData. So check the data and its status.
+        String dataStr = "";
+        if ((scanDataCollection != null) && (scanDataCollection.getResult() == ScannerResults.SUCCESS)) {
+            ArrayList<ScanDataCollection.ScanData> scanData = scanDataCollection.getScanData();
+            // Iterate through scanned data and prepare the dataStr
+            for (ScanDataCollection.ScanData data : scanData) {
+                // Get the scanned data
+                String barcodeData = data.getData();
+                // Get the type of label being scanned
+                ScanDataCollection.LabelType labelType = data.getLabelType();
+                // Concatenate barcode data and label type
+                dataStr = barcodeData;
+            }
+
+// Updates EditText with scanned data and type of label on UI thread.
+            updateData(dataStr);
+
+
+        }
+    }
+
+// Variable to hold scan data length
+
+
+    private void updateData(final String result) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Update the dataView EditText on UI thread with barcode data and its label type
+Log.d("resuzls", result);
+              //  dataView.append(result + "\n");
+                zaproz(result);
+            }
+        });
+    }
+
+
+
+
+
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        try {
+            // Release all resources
+            if (emdkManager != null) {
+                emdkManager.release();
+                emdkManager = null;
+
+            }
+        }
+        catch (Throwable throwable)
+        {
+            throwable.printStackTrace();
+        }
+    }
+
+    private void deInitScanner() {
+        if (scanner != null) {
+            try {
+                // Release the scanner
+                scanner.release();
+            } catch (Exception e) {
+                updateStatus(e.getMessage());
+            }
+            scanner = null;
+        }
+    }
+
+    private void initBarcodeManager() {
+
+// Get the feature object such as BarcodeManager object for
+// accessing the feature.
+
+        barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
+
+// Add external scanner connection listener
+
+        if (barcodeManager == null) {
+            Toast.makeText(this, "Barcode scanning is not supported.", Toast.LENGTH_LONG).show();
+            finish();
+        }
+    }
+
+
+    private void initScanner() {
+
+        if (scanner == null) {
+
+            scanner = barcodeManager.getDevice(BarcodeManager.DeviceIdentifier.DEFAULT);
+
+            if (scanner != null) {
+
+                scanner.addDataListener(this);
+                scanner.addStatusListener(this);
+
+                try {
+                    scanner.enable();
+                } catch (ScannerException e) {
+
+                }
+            }
+        }
+    }
+
+
+    private void updateStatus(final String status) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // Update the status text view on UI thread with current scanner state
+                //statusTextView.setText("" + status);
+            }
+        });
+    }
+
+
+
+
+    private void setConfig() {
+        if (scanner != null) {
+            try {
+                // Get scanner config
+                ScannerConfig config = scanner.getConfig();
+
+                // Enable haptic feedback
+                if (config.isParamSupported("config.scanParams.decodeHapticFeedback")) {
+                    config.scanParams.decodeHapticFeedback = true;
+                }
+
+                // Set scanner config
+                scanner.setConfig(config);
+            } catch (ScannerException e) {
+                updateStatus(e.getMessage());
+            }
+        }
+
+
+    }
+
+
+    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean appSentToBackground = intent.getAction().equals(Intent.ACTION_USER_BACKGROUND);
+            boolean appCameToForeground = intent.getAction().equals(Intent.ACTION_USER_FOREGROUND);
+
+            // TODO MultiUser
+            if (appSentToBackground) {
+
+
+                try {
+                    // Release all resources
+                    if (emdkManager != null) {
+                        emdkManager.release();
+                        emdkManager = null;
+                    }
+
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+            if (appCameToForeground) {
+
+
+
+                // Setting objects to null if background task are interrupted.
+                if(scanner != null)
+                    scanner = null;
+
+                if(barcodeManager != null)
+                    barcodeManager = null;
+
+                if(emdkManager != null)
+                    emdkManager = null;
+
+                EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), sklad.this);
+
+                // Use a final variable if MainActivity.this (above) fails.
+                // If result == SUCCESS, onOpened is called
+                // and scanner object is reacquired
+                if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
+                    return;
+                }
+            }
+        }
+    };
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_sklad);
+
+
+
+
+
+        try {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_USER_BACKGROUND);
+            filter.addAction(Intent.ACTION_USER_FOREGROUND);
+            registerReceiver(broadcastReceiver, filter);
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), this);
+        if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
+            return;
+        }
+
+
+
+
+
+        int permissionStatus = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA);
+
+        if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
+
+        } else {
+            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA},
+                    6757);
+        }
+
 
 
         FloatingActionButton floating_action_button = (FloatingActionButton) findViewById(R.id.floating_action_button);
@@ -96,24 +414,19 @@ public class sklad extends AppCompatActivity {
         RecyclerView.LayoutManager mLayoutManager = new GridLayoutManager(this, 3);
         recyclerView.setLayoutManager(mLayoutManager);
         // создаем адаптер
+        progressBar3 = (ProgressBar) findViewById(R.id.progressBar3);
 
         mToolbar = findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
 
-        textView15 = findViewById(R.id.textView15);
+        //textView15 = findViewById(R.id.textView15);
 
-        //recyclerView = (RecyclerView) findViewById(R.id.grid1);
-        ImageView imageView2 = findViewById(R.id.imageView2);
-        imageView2.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                IntentIntegrator integrator = new IntentIntegrator(sklad.this); // `this` is the current Activity
 
-                integrator.initiateScan();
 
-            }
-        });
+        progressBar3.setVisibility(View.INVISIBLE);
+        recyclerView.setVisibility(View.INVISIBLE);
+
 
 
         searchView = (MaterialSearchView) findViewById(R.id.search_view);
@@ -153,7 +466,8 @@ public class sklad extends AppCompatActivity {
 
     }
 
-    TextView textView15;
+
+      //  TextView textView15;
     MaterialSearchView searchView;
 
 
@@ -176,6 +490,9 @@ public class sklad extends AppCompatActivity {
         if(zakaz==null)return;
         tek_zakaz = zakaz;
 
+        progressBar3.setVisibility(View.VISIBLE);
+        recyclerView.setVisibility(View.INVISIBLE);
+Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         AsyncHttpClient client = new AsyncHttpClient();
         client.get("https://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
 
@@ -206,8 +523,12 @@ public class sklad extends AppCompatActivity {
                     DataAdapter adapter = new DataAdapter(sklad.this, fotozakaz, sklad.this);
                     // устанавливаем для списка адаптер
                     recyclerView.setAdapter(adapter);
-                    textView15.setText("Заказ " + zakaz);
 
+                    //textView15.setText("Заказ " + zakaz);
+                    mToolbar.setTitle("Заказ " + zakaz);
+
+                    progressBar3.setVisibility(View.INVISIBLE);
+                    recyclerView.setVisibility(View.VISIBLE);
                 } catch (JSONException e) {
                     e.printStackTrace();
 
@@ -228,7 +549,7 @@ public class sklad extends AppCompatActivity {
         Bitmap myBitmap = BitmapFactory.decodeFile(directory_file.getAbsolutePath());
 
 
-        Log.d("adasd", directory_file.getPath() + "/" + "JPEG_20190716_153234_5270310853536499540.jpg");
+
 
         AsyncHttpClient client = new AsyncHttpClient();
         File myFile = directory_file;
@@ -237,7 +558,7 @@ public class sklad extends AppCompatActivity {
             params.put("file_input", myFile);
         } catch (FileNotFoundException e) {
         }
-
+        Log.d("post", "http://teplogico.ru/gn/" + tek_zakaz);
         client.post("http://teplogico.ru/gn/" + tek_zakaz, params, new AsyncHttpResponseHandler() {
 
             @Override
@@ -272,17 +593,11 @@ public class sklad extends AppCompatActivity {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             asdadsad();
         }
-
-        IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
-        if (result != null) {
-            if (result.getContents() == null) {
-                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
-            } else {
-                zaproz(result.getContents());
-            }
-        } else {
-            super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode==323){
+            zaproz(tek_zakaz);
         }
+
+
     }
 
 
@@ -336,4 +651,8 @@ public class sklad extends AppCompatActivity {
     }
 
 
+    @Override
+    public void onConnectionChange(ScannerInfo scannerInfo, BarcodeManager.ConnectionState connectionState) {
+
+    }
 }

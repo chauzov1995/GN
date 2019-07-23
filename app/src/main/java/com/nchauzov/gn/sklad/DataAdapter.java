@@ -50,7 +50,7 @@ class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
                 Intent intent = new Intent(activity, Main2Activity.class);
                 intent.putExtra("id", phone.ID);
                 intent.putExtra("path", phone.path);
-                activity.startActivity(intent);
+                activity.startActivityForResult(intent, 323);
 
                 /*
 
