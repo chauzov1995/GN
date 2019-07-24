@@ -17,7 +17,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,18 +34,8 @@ import com.loopj.android.http.RequestParams;
 import com.miguelcatalan.materialsearchview.MaterialSearchView;
 import com.nchauzov.gn.R;
 import com.symbol.emdk.EMDKManager;
-import com.symbol.emdk.EMDKManager.EMDKListener;
-import com.symbol.emdk.EMDKResults;
 import com.symbol.emdk.barcode.BarcodeManager;
-import com.symbol.emdk.barcode.ScanDataCollection;
 import com.symbol.emdk.barcode.Scanner;
-import com.symbol.emdk.barcode.Scanner.DataListener;
-import com.symbol.emdk.barcode.Scanner.StatusListener;
-import com.symbol.emdk.barcode.ScannerConfig;
-import com.symbol.emdk.barcode.ScannerException;
-import com.symbol.emdk.barcode.ScannerInfo;
-import com.symbol.emdk.barcode.ScannerResults;
-import com.symbol.emdk.barcode.StatusData;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -64,288 +53,17 @@ import cz.msebera.android.httpclient.Header;
 import static androidx.core.content.FileProvider.getUriForFile;
 
 
-public class sklad extends AppCompatActivity  implements EMDKListener,  DataListener, StatusListener, BarcodeManager.ScannerConnectionListener {
+public class sklad extends AppCompatActivity {
 
     private ProgressBar progressBar3;
-    // Declare a variable to store EMDKManager object
-    private EMDKManager emdkManager = null;
-
-    // Declare a variable to store Barcode Manager object
-    private BarcodeManager barcodeManager = null;
-
-    // Declare a variable to hold scanner device to scan
-    private Scanner scanner = null;
-
-
-
     File directory_file;
-    private TextView mSelectText;
     static final int REQUEST_IMAGE_CAPTURE = 1;
 
     ArrayList<class_zakaz> fotozakaz;
 
-
-
-    @Override
-    public void onOpened(EMDKManager emdkManager) {
-
-        this.emdkManager = emdkManager;
-
-
-        // Acquire barcode manager resources
-        barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
-        if(barcodeManager == null)
-        {
-            try {
-                Thread.sleep(3000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
-        }
-
-        // Add connection listener
-        if (barcodeManager != null) {
-            barcodeManager.addConnectionListener(this);
-            initScanner();
-        }
-
-
-    }
-
-
-    @Override
-    public void onClosed() {
-
-        try {
-            if (emdkManager != null) {
-                // Release all the resources
-                emdkManager.release();
-                emdkManager = null;
-            }
-        } catch (Throwable e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void onStatus(StatusData statusData) {
-
-        StatusData.ScannerStates state = statusData.getState();
-        String statusString = statusData.getFriendlyName()+" is " + state.toString().toLowerCase();
-
-
-
-        switch(state) {
-            case IDLE:
-                try {
-                    scanner.read();
-                } catch (ScannerException e) {
-                    e.printStackTrace();
-
-                }
-                break;
-        }
-    }
-    @Override
-    public void onData(ScanDataCollection scanDataCollection) {
-        // TODO Auto-generated method stub
-
-
-        // The ScanDataCollection object gives scanning result and
-// the collection of ScanData. So check the data and its status.
-        String dataStr = "";
-        if ((scanDataCollection != null) && (scanDataCollection.getResult() == ScannerResults.SUCCESS)) {
-            ArrayList<ScanDataCollection.ScanData> scanData = scanDataCollection.getScanData();
-            // Iterate through scanned data and prepare the dataStr
-            for (ScanDataCollection.ScanData data : scanData) {
-                // Get the scanned data
-                String barcodeData = data.getData();
-                // Get the type of label being scanned
-                ScanDataCollection.LabelType labelType = data.getLabelType();
-                // Concatenate barcode data and label type
-                dataStr = barcodeData;
-            }
-
-// Updates EditText with scanned data and type of label on UI thread.
-            updateData(dataStr);
-
-
-        }
-    }
-
-// Variable to hold scan data length
-
-
-    private void updateData(final String result) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Update the dataView EditText on UI thread with barcode data and its label type
-Log.d("resuzls", result);
-              //  dataView.append(result + "\n");
-                zaproz(result);
-            }
-        });
-    }
-
-
-
-
-
-
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        try {
-            // Release all resources
-            if (emdkManager != null) {
-                emdkManager.release();
-                emdkManager = null;
-
-            }
-        }
-        catch (Throwable throwable)
-        {
-            throwable.printStackTrace();
-        }
-    }
-
-    private void deInitScanner() {
-        if (scanner != null) {
-            try {
-                // Release the scanner
-                scanner.release();
-            } catch (Exception e) {
-                updateStatus(e.getMessage());
-            }
-            scanner = null;
-        }
-    }
-
-    private void initBarcodeManager() {
-
-// Get the feature object such as BarcodeManager object for
-// accessing the feature.
-
-        barcodeManager = (BarcodeManager) emdkManager.getInstance(EMDKManager.FEATURE_TYPE.BARCODE);
-
-// Add external scanner connection listener
-
-        if (barcodeManager == null) {
-            Toast.makeText(this, "Barcode scanning is not supported.", Toast.LENGTH_LONG).show();
-            finish();
-        }
-    }
-
-
-    private void initScanner() {
-
-        if (scanner == null) {
-
-            scanner = barcodeManager.getDevice(BarcodeManager.DeviceIdentifier.DEFAULT);
-
-            if (scanner != null) {
-
-                scanner.addDataListener(this);
-                scanner.addStatusListener(this);
-
-                try {
-                    scanner.enable();
-                } catch (ScannerException e) {
-
-                }
-            }
-        }
-    }
-
-
-    private void updateStatus(final String status) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                // Update the status text view on UI thread with current scanner state
-                //statusTextView.setText("" + status);
-            }
-        });
-    }
-
-
-
-
-    private void setConfig() {
-        if (scanner != null) {
-            try {
-                // Get scanner config
-                ScannerConfig config = scanner.getConfig();
-
-                // Enable haptic feedback
-                if (config.isParamSupported("config.scanParams.decodeHapticFeedback")) {
-                    config.scanParams.decodeHapticFeedback = true;
-                }
-
-                // Set scanner config
-                scanner.setConfig(config);
-            } catch (ScannerException e) {
-                updateStatus(e.getMessage());
-            }
-        }
-
-
-    }
-
-
-    BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            boolean appSentToBackground = intent.getAction().equals(Intent.ACTION_USER_BACKGROUND);
-            boolean appCameToForeground = intent.getAction().equals(Intent.ACTION_USER_FOREGROUND);
-
-            // TODO MultiUser
-            if (appSentToBackground) {
-
-
-                try {
-                    // Release all resources
-                    if (emdkManager != null) {
-                        emdkManager.release();
-                        emdkManager = null;
-                    }
-
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-            if (appCameToForeground) {
-
-
-
-                // Setting objects to null if background task are interrupted.
-                if(scanner != null)
-                    scanner = null;
-
-                if(barcodeManager != null)
-                    barcodeManager = null;
-
-                if(emdkManager != null)
-                    emdkManager = null;
-
-                EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), sklad.this);
-
-                // Use a final variable if MainActivity.this (above) fails.
-                // If result == SUCCESS, onOpened is called
-                // and scanner object is reacquired
-                if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
-                    return;
-                }
-            }
-        }
-    };
+    private EMDKManager emdkManager = null;
+    private BarcodeManager barcodeManager = null;
+    private Scanner scanner = null;
 
 
     @Override
@@ -355,23 +73,14 @@ Log.d("resuzls", result);
 
 
 
+        Intent i = new Intent();
+        i.setAction("com.symbol.datawedge.api.ACTION");
+        i.putExtra("com.symbol.datawedge.api.SET_DEFAULT_PROFILE", "gnprof");
+        this.sendBroadcast(i);
 
 
-        try {
-            IntentFilter filter = new IntentFilter();
-            filter.addAction(Intent.ACTION_USER_BACKGROUND);
-            filter.addAction(Intent.ACTION_USER_FOREGROUND);
-            registerReceiver(broadcastReceiver, filter);
 
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-
-        EMDKResults results = EMDKManager.getEMDKManager(getApplicationContext(), this);
-        if (results.statusCode != EMDKResults.STATUS_CODE.SUCCESS) {
-            return;
-        }
-
+        //registerReceivers();
 
 
 
@@ -381,10 +90,9 @@ Log.d("resuzls", result);
         if (permissionStatus == PackageManager.PERMISSION_GRANTED) {
 
         } else {
-            ActivityCompat.requestPermissions(this, new String[] {Manifest.permission.CAMERA},
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA},
                     6757);
         }
-
 
 
         FloatingActionButton floating_action_button = (FloatingActionButton) findViewById(R.id.floating_action_button);
@@ -397,7 +105,7 @@ Log.d("resuzls", result);
                 if (tek_zakaz != null) {
                     dispatchTakePictureIntent();
                 } else {
-                  Toast.makeText(sklad.this, "Сначала выберите заказ", Toast.LENGTH_LONG).show();
+                    Toast.makeText(sklad.this, "Сначала выберите заказ", Toast.LENGTH_LONG).show();
                 }
 
             }
@@ -423,10 +131,8 @@ Log.d("resuzls", result);
         //textView15 = findViewById(R.id.textView15);
 
 
-
         progressBar3.setVisibility(View.INVISIBLE);
         recyclerView.setVisibility(View.INVISIBLE);
-
 
 
         searchView = (MaterialSearchView) findViewById(R.id.search_view);
@@ -463,11 +169,10 @@ Log.d("resuzls", result);
         });
 
 
-
     }
 
 
-      //  TextView textView15;
+    //  TextView textView15;
     MaterialSearchView searchView;
 
 
@@ -476,6 +181,7 @@ Log.d("resuzls", result);
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
 
         MenuItem item = menu.findItem(R.id.action_search);
         searchView.setMenuItem(item);
@@ -487,12 +193,12 @@ Log.d("resuzls", result);
     RecyclerView recyclerView;
 
     public void zaproz(final String zakaz) {
-        if(zakaz==null)return;
+        if (zakaz == null) return;
         tek_zakaz = zakaz;
 
         progressBar3.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.INVISIBLE);
-Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
+        Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         AsyncHttpClient client = new AsyncHttpClient();
         client.get("https://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
 
@@ -515,7 +221,7 @@ Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
 
                     for (int i = 0; i < timeline.length(); i++) {
 
-                            JSONObject zakaz = timeline.getJSONObject(i);
+                        JSONObject zakaz = timeline.getJSONObject(i);
 
                         fotozakaz.add(new class_zakaz(zakaz.getInt("id"), zakaz.getString("path")));
                         Log.d("JSONArray", zakaz.getString("path"));
@@ -547,8 +253,6 @@ Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
     void asdadsad() {
 
         Bitmap myBitmap = BitmapFactory.decodeFile(directory_file.getAbsolutePath());
-
-
 
 
         AsyncHttpClient client = new AsyncHttpClient();
@@ -593,7 +297,7 @@ Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             asdadsad();
         }
-        if(requestCode==323){
+        if (requestCode == 323) {
             zaproz(tek_zakaz);
         }
 
@@ -652,7 +356,112 @@ Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
 
 
     @Override
-    public void onConnectionChange(ScannerInfo scannerInfo, BarcodeManager.ConnectionState connectionState) {
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myBroadcastReceiver);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        registerReceivers();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        unRegisterReceivers();
+    }
+
+    // Register/unregister broadcast receiver and filter results
+
+    void registerReceivers() {
+
+
+
+        IntentFilter filter = new IntentFilter();
+        filter.addCategory(Intent.CATEGORY_DEFAULT);
+        filter.addAction(getResources().getString(R.string.activity_intent_filter_action));
+        registerReceiver(myBroadcastReceiver, filter);
 
     }
+
+    void unRegisterReceivers(){
+        unregisterReceiver(myBroadcastReceiver);
+    }
+
+
+    //
+    // After registering the broadcast receiver, the next step (below) is to define it.
+    // Here it's done in the MainActivity.java, but also can be handled by a separate class.
+    // The logic of extracting the scanned data and displaying it on the screen
+    // is executed in its own method (later in the code). Note the use of the
+    // extra keys defined in the strings.xml file.
+    //
+    private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            Bundle b = intent.getExtras();
+
+            //
+            // The following is useful for debugging to verify
+            // the format of received intents from DataWedge:
+            //
+            // for (String key : b.keySet())
+            // {
+            //   Log.v(LOG_TAG, key);
+            // }
+            //
+
+            Bundle extras = getIntent().getExtras();
+            if (intent.hasExtra("com.symbol.datawedge.api.RESULT_GET_ACTIVE_PROFILE")) {
+                String activeProfile = extras.getString("com.symbol.datawedge.api.RESULT_GET_ACTIVE_PROFILE");
+                Log.d("adasd", activeProfile);
+            }
+
+
+            if (action.equals(getResources().getString(R.string.activity_intent_filter_action))) {
+                //
+                //  Received a barcode scan
+                //
+
+                try {
+                    displayScanResult(intent, "via Broadcast");
+                } catch (Exception e) {
+
+                    //
+                    // Catch if the UI does not exist when broadcast is received
+                    //
+                }
+            }
+        }
+    };
+
+
+
+
+
+
+    //
+    // The section below assumes that a UI exists in which to place the data. A production
+    // application would be driving much of the behavior following a scan.
+    //
+    private void displayScanResult(Intent initiatingIntent, String howDataReceived) {
+        String decodedSource = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_source));
+        String decodedData = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_data));
+        String decodedLabelType = initiatingIntent.getStringExtra(getResources().getString(R.string.datawedge_intent_key_label_type));
+
+    //    final TextView lblScanSource = (TextView) findViewById(R.id.lblScanSource);
+    //    final TextView lblScanData = (TextView) findViewById(R.id.lblScanData);
+    //    final TextView lblScanLabelType = (TextView) findViewById(R.id.lblScanDecoder);
+     //   lblScanSource.setText(decodedSource + " " + howDataReceived);
+    //    lblScanData.setText(decodedData);
+        Log.d("adasd", decodedData);
+      //  lblScanLabelType.setText(decodedLabelType);
+
+
+        zaproz(decodedData);
+    }
+
 }
