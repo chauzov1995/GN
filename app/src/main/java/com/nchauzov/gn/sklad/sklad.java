@@ -73,14 +73,7 @@ public class sklad extends AppCompatActivity {
 
 
 
-        Intent i = new Intent();
-        i.setAction("com.symbol.datawedge.api.ACTION");
-        i.putExtra("com.symbol.datawedge.api.SET_DEFAULT_PROFILE", "gnprof");
-        this.sendBroadcast(i);
 
-
-
-        //registerReceivers();
 
 
 
@@ -358,7 +351,7 @@ public class sklad extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(myBroadcastReceiver);
+     //   unregisterReceiver(myBroadcastReceiver);
     }
 
     @Override
@@ -377,6 +370,13 @@ public class sklad extends AppCompatActivity {
 
     void registerReceivers() {
 
+/*
+        Intent i = new Intent();
+        i.setAction("com.symbol.datawedge.api.ACTION");
+        i.putExtra("com.symbol.datawedge.api.SET_DEFAULT_PROFILE", "gnprof");
+        this.sendBroadcast(i);
+
+*/
 
 
         IntentFilter filter = new IntentFilter();
@@ -387,6 +387,12 @@ public class sklad extends AppCompatActivity {
     }
 
     void unRegisterReceivers(){
+
+/*
+        Intent i = new Intent();
+        i.setAction("com.symbol.datawedge.api.ACTION");
+        i.putExtra("com.symbol.datawedge.api.RESET_DEFAULT_PROFILE", "");
+*/
         unregisterReceiver(myBroadcastReceiver);
     }
 
