@@ -42,6 +42,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
@@ -249,7 +250,7 @@ public class sklad extends AppCompatActivity {
 
 
         AsyncHttpClient client = new AsyncHttpClient();
-        File myFile = directory_file;
+        final File myFile = directory_file;
         RequestParams params = new RequestParams();
         try {
             params.put("file_input", myFile);
@@ -269,12 +270,33 @@ public class sklad extends AppCompatActivity {
                 // called when response HTTP status is "200 OK"
                 Log.d("status", statusCode + "" + response);
                 zaproz(tek_zakaz);
+
+                File folder = new File(myFile.getParent());
+                FileFilter filter = new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        return pathname.isFile();
+                    }
+                };
+                File[] listOfFiles = folder.listFiles(filter);
+
+                for (File file : listOfFiles) {
+                    if (file.isFile()) {
+                        file.delete();
+                        Log.d("status",  file.getAbsolutePath());
+                    }
+                }
+
+
+
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, byte[] errorResponse, Throwable e) {
                 // called when response HTTP status is "4XX" (eg. 401, 403, 404)
                 Log.d("status", statusCode + "");
+              //  myFile.delete();
+
             }
 
             @Override
@@ -287,6 +309,7 @@ public class sklad extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
             asdadsad();
         }

@@ -21,7 +21,7 @@
         android:theme="@style/AppTheme">
 
 
-        <uses-library android:name="com.symbol.emdk"  />
+        <uses-library android:name="com.symbol.emdk" android:required="false" />
 
         <activity android:name=".sklad.Main2Activity"></activity>
 
