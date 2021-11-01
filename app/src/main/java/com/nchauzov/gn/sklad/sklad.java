@@ -1,5 +1,7 @@
 package com.nchauzov.gn.sklad;
 
+import static androidx.core.content.FileProvider.getUriForFile;
+
 import android.Manifest;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -50,8 +52,6 @@ import java.util.ArrayList;
 import java.util.Date;
 
 import cz.msebera.android.httpclient.Header;
-
-import static androidx.core.content.FileProvider.getUriForFile;
 
 
 public class sklad extends AppCompatActivity {
@@ -194,7 +194,7 @@ public class sklad extends AppCompatActivity {
         recyclerView.setVisibility(View.INVISIBLE);
         Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get("https://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
+        client.get("http://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
 
 
             @Override
