@@ -11,6 +11,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -336,11 +337,15 @@ public class sklad extends AppCompatActivity {
 
             }
             // Continue only if the File was successfully created
+            Uri photoURI;
             if (photoFile != null) {
-                Uri photoURI = getUriForFile(this,
-                        "com.example.android.fileprovider",
-                        photoFile);
-
+                if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.KITKAT){
+                    photoURI = Uri.fromFile(photoFile);
+                }else {
+                    photoURI  = getUriForFile(this,
+                            "com.example.android.fileprovider",
+                            photoFile);
+                }
 
                 Log.d("asd", photoURI.getPath() + "");
                 directory_file = photoFile;
