@@ -72,7 +72,7 @@ public class Main2Activity extends AppCompatActivity {
 
 
                                     AsyncHttpClient client = new AsyncHttpClient();
-                                    client.get("http://teplogico.ru/gn2/"+idfoto, new AsyncHttpResponseHandler() {
+                                    client.get("https://teplogico.ru/gn2/"+idfoto, new AsyncHttpResponseHandler() {
 
 
                                         @Override

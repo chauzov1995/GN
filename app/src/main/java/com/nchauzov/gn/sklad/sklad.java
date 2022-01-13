@@ -195,7 +195,7 @@ public class sklad extends AppCompatActivity {
         recyclerView.setVisibility(View.INVISIBLE);
         Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get("http://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
+        client.get("https://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
 
 
             @Override
@@ -257,8 +257,8 @@ public class sklad extends AppCompatActivity {
             params.put("file_input", myFile);
         } catch (FileNotFoundException e) {
         }
-        Log.d("post", "http://teplogico.ru/gn/" + tek_zakaz);
-        client.post("http://teplogico.ru/gn/" + tek_zakaz, params, new AsyncHttpResponseHandler() {
+        Log.d("post", "https://teplogico.ru/gn/" + tek_zakaz);
+        client.post("https://teplogico.ru/gn/" + tek_zakaz, params, new AsyncHttpResponseHandler() {
 
             @Override
             public void onStart() {
