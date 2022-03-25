@@ -189,13 +189,13 @@ public class sklad extends AppCompatActivity {
 
     public void zaproz(final String zakaz) {
         if (zakaz == null) return;
-        tek_zakaz = zakaz;
+        tek_zakaz = zakaz.trim();
 
         progressBar3.setVisibility(View.VISIBLE);
         recyclerView.setVisibility(View.INVISIBLE);
         Log.d("zpaors", "https://teplogico.ru/gn1/" + tek_zakaz);
         AsyncHttpClient client = new AsyncHttpClient();
-        client.get("https://teplogico.ru/gn1/" + zakaz, new JsonHttpResponseHandler() {
+        client.get("https://teplogico.ru/gn1/" + tek_zakaz, new JsonHttpResponseHandler() {
 
 
             @Override
@@ -226,7 +226,7 @@ public class sklad extends AppCompatActivity {
                     recyclerView.setAdapter(adapter);
 
                     //textView15.setText("Заказ " + zakaz);
-                    mToolbar.setTitle("Заказ " + zakaz);
+                    mToolbar.setTitle("Заказ " + tek_zakaz);
 
                     progressBar3.setVisibility(View.INVISIBLE);
                     recyclerView.setVisibility(View.VISIBLE);
